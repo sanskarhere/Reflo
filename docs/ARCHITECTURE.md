@@ -301,6 +301,24 @@ Replace with your real failure once you run the actual batch — a true number b
 
 ---
 
+## 7.1 Design decision — no LLM fallback in the root-cause classifier
+
+v1 deliberately uses **rules only** for root-cause classification, with
+unmatched cases falling through to `unknown` and then to the existing
+`repeat_unknown_cause → escalate_human` guardrail, rather than adding an LLM
+fallback.
+
+Rationale: failure-code classification is a closed-world problem — Razorpay's
+error taxonomy is finite and documented, so a deterministic match is strictly
+safer than an LLM guess, and it keeps precision/recall honestly measurable
+against ground truth. Batch evaluation (`backend/tests/batch_eval/`) confirms
+this in practice: precision is 1.00 on every class the classifier is willing
+to commit to — it never mislabels, it only ever defers to a human when
+uncertain. LLM judgment is reserved for `agent/decision.py`, where picking
+the right recovery action genuinely requires weighing context the rules
+engine can't (see section 3.3 / 4.4) — that is where the "agent" in this
+system actually earns its place.
+
 ## 8. Appendix
 
 **Glossary:** *Mandate* — NPCI/UPI Autopay or eNACH standing instruction. *Recovery case* — one failed-payment lifecycle tracked end-to-end. *Naive-retry baseline* — control logic that retries every failure immediately, used to prove the agent adds value.
