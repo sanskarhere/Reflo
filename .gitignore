@@ -1,0 +1,16 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+*.db
+
+# node
+node_modules/
+.next/
+.vercel/
+
+# env
+.env
+.env.local
+*.env.example.local
+venv
