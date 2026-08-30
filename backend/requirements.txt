@@ -5,5 +5,5 @@ pydantic==2.9.2
 python-dotenv==1.0.1
 httpx==0.27.2
 pyyaml==6.0.2
-anthropic==0.34.2
+openai==1.54.0      # used to call xAI's Grok via its OpenAI-compatible endpoint
 razorpay==1.4.2

@@ -110,7 +110,7 @@ Merchant events (Razorpay test-mode webhooks)
 [Root-Cause Classifier]  (rules engine + LLM fallback)
         │  status: CLASSIFIED
         ▼
-[Decision Agent]  (Claude, fixed tool/action schema)
+[Decision Agent]  (Grok via xAI, fixed tool/action schema)
         │  status: DECIDED
         ▼
 [Guardrail Gate]  (deterministic, config-driven rules)
@@ -190,7 +190,7 @@ BatchRun(id, batch_size, recovered_amount, recovery_rate, baseline_rate, blocked
 | Layer | Choice | Rationale |
 |---|---|---|
 | Backend | Python + FastAPI | Fast to scaffold, good typing for a state-machine-shaped domain |
-| Decision agent | Claude API, fixed tool schema (5 tools = 5 allowed actions) | Bounded by construction — the model literally cannot call anything outside the action set |
+| Decision agent | xAI Grok via its OpenAI-compatible API, fixed tool schema (5 actions only) | Bounded by construction — the model literally cannot call anything outside the action set. Free trial credits during the build, and the OpenAI-compatible interface means swapping providers later is a one-line change, not a rewrite. |
 | Storage | SQLite (v1) → Postgres-ready schema | Zero-ops for hackathon, same schema scales later |
 | Frontend | React + Tailwind, single dashboard | Matches the three screens above, nothing speculative |
 | Payments | Razorpay test-mode SDK (Subscriptions, Payment Links, Webhooks) | Required by the track brief |
@@ -201,7 +201,7 @@ BatchRun(id, batch_size, recovered_amount, recovery_rate, baseline_rate, blocked
   /app
     /ingestion         webhook handlers, event normalization
     /classifier         rules engine + LLM fallback
-    /agent               Claude tool schema + decision logic
+    /agent               Grok (xAI) tool schema + decision logic
     /guardrails          rule config (YAML) + gate function
     /execution           Razorpay test-mode client wrapper
     /audit               append-only log writer, metrics aggregator
@@ -226,18 +226,32 @@ def gate(case: RecoveryCase, rules: list[GuardrailRule]) -> GateResult:
 Rules are data (YAML/DB rows), not buried in the agent prompt — this is what makes "bounded" auditable rather than aspirational.
 
 ### 4.4 Decision agent — tool schema shape
+Calls Grok via xAI's OpenAI-compatible API, so the schema uses OpenAI-style
+function calling rather than a provider-specific shape:
 ```json
 {
-  "name": "recommend_action",
-  "input_schema": {
-    "action": {"enum": ["retry_now", "retry_scheduled", "send_payment_link",
-                          "escalate_human", "stop"]},
-    "scheduled_for": "ISO8601 | null",
-    "rationale": "string, one sentence"
+  "type": "function",
+  "function": {
+    "name": "recommend_action",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {"type": "string", "enum": ["retry_now", "retry_scheduled",
+                    "send_payment_link", "escalate_human", "stop"]},
+        "scheduled_for": {"type": ["string", "null"]},
+        "rationale": {"type": "string"}
+      },
+      "required": ["action", "rationale"]
+    }
   }
 }
 ```
-The model can only return one of five enum values — this closes off the "agent went rogue" failure mode by construction, not by hoping the prompt holds.
+`tool_choice` is forced to this one function, so the model can only return
+one of five enum values — this closes off the "agent went rogue" failure
+mode by construction, not by hoping the prompt holds. Because the interface
+is the standard OpenAI chat-completions shape, swapping to a different
+OpenAI-compatible provider later only requires changing `base_url` and
+`model` in `agent/decision.py`.
 
 ---
 

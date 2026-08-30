@@ -12,7 +12,7 @@ services:
         sync: false
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: XAI_API_KEY
         sync: false
       - key: DATABASE_URL
         sync: false
