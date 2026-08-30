@@ -1,4 +1,4 @@
-export const metadata = { title: "Revenue Recovery Agent" };
+export const metadata = { title: "Reflo — Revenue Recovery Agent" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

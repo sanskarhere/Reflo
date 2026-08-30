@@ -1,22 +1,33 @@
-# Config-driven guardrails — data, not prompt text. Section 3.4 of the design doc.
+# Config-driven guardrails — data, not eval()'d expressions. Section 3.4 of the
+# design doc. Order matters: the first active rule that fires wins, so
+# non-negotiable rules (mandate_revoked) are listed first.
 rules:
-  - name: max_attempts
-    condition: "attempt_count >= 3"
-    forced_action: stop
-    active: true
-  - name: cooldown
-    condition: "hours_since_last_attempt < 12"
-    forced_action: retry_scheduled
-    active: true
   - name: mandate_revoked
-    condition: "mandate_status == 'revoked'"
+    type: mandate_status_eq
+    value: revoked
     forced_action: stop
     active: true
+
   - name: high_value
-    condition: "amount_paise > 5000000"
+    type: amount_paise_gt
+    threshold: 5000000        # ₹50,000
     forced_action: escalate_human
     active: true
+
+  - name: max_attempts
+    type: attempt_count_gte
+    threshold: 3
+    forced_action: stop
+    active: true
+
   - name: repeat_unknown_cause
-    condition: "unknown_classification_count >= 2"
+    type: unknown_classification_count_gte
+    threshold: 2
     forced_action: escalate_human
+    active: true
+
+  - name: cooldown
+    type: hours_since_last_attempt_lt
+    threshold: 12
+    forced_action: retry_scheduled
     active: true

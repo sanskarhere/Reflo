@@ -1,9 +1,12 @@
-# Razorpay Revenue Recovery Agent
+# Reflo
+### Reflowing revenue that almost got stuck.
 
-Bounded agent that detects failed subscription payments, classifies the root
-cause, decides a recovery action within a fixed action set, gates it against
-explicit guardrails, executes it against Razorpay test-mode APIs, and logs a
-complete audit trail.
+A bounded, auditable agent that detects failed subscription payments, classifies
+the root cause, decides a recovery action within a fixed action set, gates it
+against explicit guardrails, executes it against Razorpay test-mode APIs, and
+logs a complete audit trail.
+
+Built for Razorpay's AI Buildathon — Track: AI Revenue Recovery.
 
 See `docs/ARCHITECTURE.md` for the full SRS/SDD.
 

@@ -6,7 +6,7 @@ from app.api.routes import router
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Razorpay Revenue Recovery Agent", version="0.1.0")
+app = FastAPI(title="Reflo", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
