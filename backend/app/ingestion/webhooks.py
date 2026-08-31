@@ -156,6 +156,9 @@ def handle_payment_outcome_event(raw_body: bytes, signature: str, event: str, db
     )
 
     return case
+
+
+def handle_payment_failed_event(raw_body: bytes, signature: str, db) -> Any:
     """
     Full handler used by the API route: verify -> parse -> dedupe -> persist.
 
