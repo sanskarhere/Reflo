@@ -8,9 +8,13 @@ class RecoveryCase(Base):
     id = Column(String, primary_key=True)
     subscription_id = Column(String, index=True)
     customer_id = Column(String, index=True)
+    source_payment_id = Column(String, unique=True, index=True, nullable=True)  # Razorpay payment id — dedupe key
     amount = Column(Integer)  # paise
+    error_code = Column(String, nullable=True)     # raw Razorpay failure signal, classifier input
+    error_reason = Column(String, nullable=True)   # raw Razorpay failure signal, classifier input
     root_cause = Column(String, nullable=True)
     confidence = Column(Float, nullable=True)
+    mandate_status = Column(String, default="active")  # set at ingestion time, from webhooks.py
     decision = Column(String, nullable=True)       # proposed action, pre-gate
     gate_result = Column(String, nullable=True)     # approved | blocked
     status = Column(String, default="DETECTED")     # state machine, section 3.2

@@ -142,6 +142,19 @@ Terminal states: `RESOLVED`, `STOPPED`, `ESCALATED`, `FAILED`. No transition ski
 7. Metrics store increments batch counters.
 
 ### 3.4 Guardrail rule table (v1 baseline — config-driven, not hardcoded)
+
+**Implementation note — verified against Razorpay's actual API surface
+during build:** Razorpay Subscriptions has its own built-in Smart Retry
+system; there is no public API for a merchant to force-retry a specific
+failed charge. `retry_now`/`retry_scheduled` therefore don't call a
+Razorpay API at all — they represent a decision to defer to Razorpay's own
+retry system, logged as a real audit entry rather than silently doing
+nothing. `send_payment_link` (creates a real Payment Link) and `stop`
+(cancels the subscription) are the two actions that make actual Razorpay
+API calls. See `backend/app/execution/razorpay_client.py` for the full
+rationale — this is a design correction driven by checking the real API
+before building against an assumption, not a limitation discovered late.
+
 | Rule | Condition | Action |
 |---|---|---|
 | Max attempts | attempt_count ≥ 3 | Force `stop`, escalate |
@@ -160,13 +173,17 @@ BatchRun(id, batch_size, recovered_amount, recovery_rate, baseline_rate, blocked
 ```
 
 ### 3.6 API design (internal service)
+Implementation note: Razorpay webhooks are configured as a single URL per
+account, with the event type read from the payload — so ingestion is one
+consolidated endpoint, not one route per event type as originally sketched.
+
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/events/payment-failed` | POST | Ingest a failure event, create case |
-| `/cases/{id}` | GET | Full reasoning trail for one case |
-| `/cases/{id}/audit` | GET | Raw audit log entries |
-| `/batch/{id}/metrics` | GET | Aggregate recovery metrics vs. baseline |
-| `/rules` | GET/PUT | Inspect/update guardrail config |
+| `/webhooks/razorpay` | POST | Single entry point for all Razorpay events. Runs the full pipeline on `subscription.charge.failed`; resolves cases to `RESOLVED` on `payment_link.paid`/`payment.captured`; returns 200+ignored for anything else (avoids Razorpay retry storms on events we don't act on). |
+| `/cases/{id}` | GET | Case summary — status, root cause, decision, gate result |
+| `/cases/{id}/audit` | GET | Full reasoning trail for one case |
+| `/batch/{id}/metrics` | GET | Aggregate recovery metrics vs. baseline (populated by `scripts/run_batch.py`) |
+| `/rules` | GET | Inspect active guardrail config (read-only in v1, per section 3.7) |
 
 ### 3.7 UI/UX — dashboard (the panel's actual window into the system)
 **Design intent:** the dashboard *is* the audit trail made legible — not a decoration bolted on after the backend. Every screen should answer "why did the agent do that" in under 5 seconds of looking.
@@ -298,6 +315,15 @@ Replace with your real failure once you run the actual batch — a true number b
 - **Classification precision/recall** per root-cause class, confusion matrix included — not just an aggregate accuracy number.
 
 ### 6.4 v1 acceptance criteria
+Status as of last update: all backend logic is implemented and each piece
+has been verified in isolation (guardrail gate, classifier, decision agent
+wiring, execution routing, and the full orchestration pipeline all pass
+their tests). What's genuinely NOT yet verified: nothing has run against a
+live deployment, a real Razorpay test-mode account, or real pytest — the
+build environment had no network access, so all tests were confirmed with
+manual assertion scripts as a stand-in. Don't check these boxes until
+they're true against the real deployment, not just against the code:
+
 - [ ] 100% of executed actions have a complete audit trail (input → cause → decision → gate → outcome).
 - [ ] Zero guardrail violations across the full test batch.
 - [ ] Agent recovery rate reported alongside, and ideally above, naive-retry baseline on the same batch.
