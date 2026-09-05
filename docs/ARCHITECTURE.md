@@ -180,6 +180,7 @@ consolidated endpoint, not one route per event type as originally sketched.
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/webhooks/razorpay` | POST | Single entry point for all Razorpay events. Runs the full pipeline on `subscription.charge.failed`; resolves cases to `RESOLVED` on `payment_link.paid`/`payment.captured`; returns 200+ignored for anything else (avoids Razorpay retry storms on events we don't act on). |
+| `/cases` | GET | List cases — backs the Recovery Queue table. Filterable by `status`/`root_cause`, sortable by `created_at`/`amount` |
 | `/cases/{id}` | GET | Case summary — status, root cause, decision, gate result |
 | `/cases/{id}/audit` | GET | Full reasoning trail for one case |
 | `/batch/{id}/metrics` | GET | Aggregate recovery metrics vs. baseline (populated by `scripts/run_batch.py`) |

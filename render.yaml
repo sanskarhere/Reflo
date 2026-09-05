@@ -7,6 +7,7 @@ databases:
 services:
   - type: web
     name: reflo-backend
+    rootDir: backend
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
