@@ -8,6 +8,11 @@ Built for Razorpay's AI Buildathon — Track: AI Revenue Recovery.
 
 See `docs/ARCHITECTURE.md` for the full SRS/SDD.
 
+You can explore the live deployment of this project here:
+👉 **[Live Link](https://reflo-recovery-agent.vercel.app/)**
+
+> ⚠️ **Note on Deployment:** This project is hosted on a free instance on Render. If the application has been idle, it may take around **10 to 15 seconds** to spin up and load the initial page while the server wakes up. Thank you for your patience!
+
 ## Repo layout
 - `backend/` — FastAPI service. Deploy target: **Render**.
 - `frontend/` — Next.js dashboard (Recovery Queue, Case Detail, Batch Metrics, Guardrail Config). Deploy target: **Vercel**.
